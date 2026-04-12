@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { DM_Sans, JetBrains_Mono } from "next/font/google";
+import { createClient } from "@/lib/supabase/server";
 import "./globals.css";
 
 const dmSans = DM_Sans({
@@ -19,11 +20,14 @@ export const metadata: Metadata = {
     "The stress-free guide for highly qualified professionals renewing their TIE residence card in Spain",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
   return (
     <html
       lang="en"
@@ -58,12 +62,44 @@ export default function RootLayout({
                   {link.label}
                 </a>
               ))}
+              {user ? (
+                <div className="flex items-center gap-1 ml-2 pl-2 border-l border-border/60">
+                  <a
+                    href="/dashboard"
+                    className="px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-all duration-200"
+                  >
+                    Dashboard
+                  </a>
+                  <form action="/api/auth/signout" method="POST">
+                    <button
+                      type="submit"
+                      className="px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-all duration-200"
+                    >
+                      Sign out
+                    </button>
+                  </form>
+                </div>
+              ) : (
+                <div className="flex items-center gap-1 ml-2 pl-2 border-l border-border/60">
+                  <a
+                    href="/login"
+                    className="px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-all duration-200"
+                  >
+                    Sign in
+                  </a>
+                </div>
+              )}
             </nav>
-            {/* Mobile nav toggle placeholder */}
+            {/* Mobile nav */}
             <nav className="sm:hidden flex items-center gap-3 text-sm">
               <a href="/track" className="text-muted-foreground hover:text-foreground">Track</a>
               <a href="/renew" className="text-muted-foreground hover:text-foreground">Renew</a>
               <a href="/status" className="text-muted-foreground hover:text-foreground">Status</a>
+              {user ? (
+                <a href="/dashboard" className="text-terracotta font-medium">Dashboard</a>
+              ) : (
+                <a href="/login" className="text-terracotta font-medium">Sign in</a>
+              )}
             </nav>
           </div>
         </header>

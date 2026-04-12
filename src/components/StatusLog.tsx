@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import { Plus, X } from "lucide-react";
+import { saveStatusCheck } from "@/app/actions/applications";
 
 type LogEntry = {
   id: string;
@@ -15,8 +16,8 @@ type LogEntry = {
 const statusOptions = [
   { value: "en_tramite", label: "Still in process", sublabel: "En trámite" },
   { value: "requerido", label: "Documents requested", sublabel: "Requerido" },
-  { value: "favorable", label: "Approved!", sublabel: "Resuelto favorable" },
-  { value: "no_favorable", label: "Denied", sublabel: "Resuelto no favorable" },
+  { value: "resuelto_favorable", label: "Approved!", sublabel: "Resuelto favorable" },
+  { value: "resuelto_no_favorable", label: "Denied", sublabel: "Resuelto no favorable" },
 ];
 
 const methodOptions = [
@@ -26,26 +27,56 @@ const methodOptions = [
   { value: "phone", label: "Phone" },
 ];
 
-export function StatusLog() {
-  const [entries, setEntries] = useState<LogEntry[]>([]);
+type SavedCheck = {
+  id: string;
+  checked_at: string;
+  check_method: string;
+  status_found: string;
+};
+
+type Props = {
+  applicationId?: string | null;
+  initialChecks?: SavedCheck[];
+};
+
+export function StatusLog({ applicationId, initialChecks = [] }: Props) {
+  const [entries, setEntries] = useState<LogEntry[]>(
+    initialChecks.map((c) => ({
+      id: c.id,
+      date: new Date(c.checked_at),
+      status: c.status_found,
+      method: c.check_method,
+    }))
+  );
   const [showForm, setShowForm] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState("");
   const [selectedMethod, setSelectedMethod] = useState("");
+  const [saving, setSaving] = useState(false);
 
-  function addEntry() {
+  async function addEntry() {
     if (!selectedStatus || !selectedMethod) return;
-    setEntries([
-      {
-        id: Date.now().toString(),
-        date: new Date(),
-        status: selectedStatus,
-        method: selectedMethod,
-      },
-      ...entries,
-    ]);
+
+    setSaving(true);
+    const newEntry: LogEntry = {
+      id: Date.now().toString(),
+      date: new Date(),
+      status: selectedStatus,
+      method: selectedMethod,
+    };
+
+    // Persist to DB if we have an applicationId
+    if (applicationId) {
+      const result = await saveStatusCheck(applicationId, selectedStatus, selectedMethod);
+      if (!result.error) {
+        // Use a real ID would come from the DB insert response, but we'll use the temp one
+      }
+    }
+
+    setEntries([newEntry, ...entries]);
     setSelectedStatus("");
     setSelectedMethod("");
     setShowForm(false);
+    setSaving(false);
   }
 
   return (
@@ -54,6 +85,9 @@ export function StatusLog() {
         <h3 className="text-sm font-semibold flex items-center gap-2">
           <span className="w-1 h-4 rounded-full bg-olive" />
           Status Check Log
+          {applicationId && (
+            <span className="text-[10px] text-olive/70 font-normal">(saved)</span>
+          )}
         </h3>
         <button
           onClick={() => setShowForm(!showForm)}
@@ -113,10 +147,10 @@ export function StatusLog() {
           <Button
             size="sm"
             onClick={addEntry}
-            disabled={!selectedStatus || !selectedMethod}
+            disabled={!selectedStatus || !selectedMethod || saving}
             className="w-full bg-terracotta hover:bg-terracotta-dark text-white"
           >
-            Save
+            {saving ? "Saving..." : "Save"}
           </Button>
         </div>
       )}
@@ -135,7 +169,7 @@ export function StatusLog() {
           >
             <div className="space-y-0.5">
               <span className="font-medium">
-                {statusOptions.find((s) => s.value === entry.status)?.label}
+                {statusOptions.find((s) => s.value === entry.status)?.label ?? entry.status}
               </span>
               <span className="text-muted-foreground block text-[10px]">
                 via {entry.method}

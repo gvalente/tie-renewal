@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { createClient } from "@/lib/supabase/client";
+import { saveApplication } from "@/app/actions/applications";
 import { Search, FileText, HelpCircle } from "lucide-react";
 
 export default function StatusPage() {
@@ -12,8 +14,9 @@ export default function StatusPage() {
   const [registro, setRegistro] = useState("");
   const [submissionDate, setSubmissionDate] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
 
@@ -26,9 +29,25 @@ export default function StatusPage() {
       return;
     }
 
+    setLoading(true);
+
+    // Save to DB if user is logged in — best-effort, don't block navigation
+    let appId: string | null = null;
+    try {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const result = await saveApplication(registro.trim(), submissionDate);
+        if (!result.error) appId = result.id;
+      }
+    } catch {
+      // Not logged in or DB unavailable — continue stateless
+    }
+
     const params = new URLSearchParams({
       registro: registro.trim(),
       date: submissionDate,
+      ...(appId ? { appId } : {}),
     });
     router.push(`/status/tracker?${params.toString()}`);
   }
@@ -101,9 +120,13 @@ export default function StatusPage() {
               <p className="text-sm text-destructive bg-destructive/10 px-3 py-2 rounded-lg">{error}</p>
             )}
 
-            <Button type="submit" className="w-full bg-terracotta hover:bg-terracotta-dark text-white h-11">
+            <Button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-terracotta hover:bg-terracotta-dark text-white h-11"
+            >
               <Search className="h-4 w-4 mr-2" />
-              Track My Application
+              {loading ? "Loading..." : "Track My Application"}
             </Button>
           </form>
         </div>
