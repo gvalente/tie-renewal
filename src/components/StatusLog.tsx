@@ -1,0 +1,152 @@
+"use client";
+
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { format } from "date-fns";
+import { Plus, X } from "lucide-react";
+
+type LogEntry = {
+  id: string;
+  date: Date;
+  status: string;
+  method: string;
+};
+
+const statusOptions = [
+  { value: "en_tramite", label: "Still in process", sublabel: "En trámite" },
+  { value: "requerido", label: "Documents requested", sublabel: "Requerido" },
+  { value: "favorable", label: "Approved!", sublabel: "Resuelto favorable" },
+  { value: "no_favorable", label: "Denied", sublabel: "Resuelto no favorable" },
+];
+
+const methodOptions = [
+  { value: "portal", label: "Portal" },
+  { value: "infoext2", label: "infoext2" },
+  { value: "sms", label: "SMS" },
+  { value: "phone", label: "Phone" },
+];
+
+export function StatusLog() {
+  const [entries, setEntries] = useState<LogEntry[]>([]);
+  const [showForm, setShowForm] = useState(false);
+  const [selectedStatus, setSelectedStatus] = useState("");
+  const [selectedMethod, setSelectedMethod] = useState("");
+
+  function addEntry() {
+    if (!selectedStatus || !selectedMethod) return;
+    setEntries([
+      {
+        id: Date.now().toString(),
+        date: new Date(),
+        status: selectedStatus,
+        method: selectedMethod,
+      },
+      ...entries,
+    ]);
+    setSelectedStatus("");
+    setSelectedMethod("");
+    setShowForm(false);
+  }
+
+  return (
+    <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="text-sm font-semibold flex items-center gap-2">
+          <span className="w-1 h-4 rounded-full bg-olive" />
+          Status Check Log
+        </h3>
+        <button
+          onClick={() => setShowForm(!showForm)}
+          className="inline-flex items-center gap-1.5 text-xs text-terracotta hover:text-terracotta-dark font-medium transition-colors"
+        >
+          {showForm ? (
+            <>
+              <X className="h-3 w-3" /> Cancel
+            </>
+          ) : (
+            <>
+              <Plus className="h-3 w-3" /> Log a check
+            </>
+          )}
+        </button>
+      </div>
+
+      {showForm && (
+        <div className="space-y-3 bg-sand/80 rounded-lg p-4 mb-3 border border-border/50">
+          <div className="space-y-1.5">
+            <p className="text-xs font-medium text-muted-foreground">What did you see?</p>
+            <div className="grid grid-cols-2 gap-1.5">
+              {statusOptions.map((opt) => (
+                <button
+                  key={opt.value}
+                  onClick={() => setSelectedStatus(opt.value)}
+                  className={`text-left p-2.5 rounded-lg border text-xs transition-all ${
+                    selectedStatus === opt.value
+                      ? "border-terracotta bg-terracotta/5 ring-1 ring-terracotta/30"
+                      : "border-border hover:border-terracotta/30 hover:bg-card"
+                  }`}
+                >
+                  <span className="font-medium block">{opt.label}</span>
+                  <span className="text-muted-foreground text-[10px]">{opt.sublabel}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="space-y-1.5">
+            <p className="text-xs font-medium text-muted-foreground">How did you check?</p>
+            <div className="flex gap-1.5">
+              {methodOptions.map((opt) => (
+                <button
+                  key={opt.value}
+                  onClick={() => setSelectedMethod(opt.value)}
+                  className={`text-xs px-3 py-1.5 rounded-lg border transition-all ${
+                    selectedMethod === opt.value
+                      ? "border-terracotta bg-terracotta/5 ring-1 ring-terracotta/30"
+                      : "border-border hover:border-terracotta/30"
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <Button
+            size="sm"
+            onClick={addEntry}
+            disabled={!selectedStatus || !selectedMethod}
+            className="w-full bg-terracotta hover:bg-terracotta-dark text-white"
+          >
+            Save
+          </Button>
+        </div>
+      )}
+
+      {entries.length === 0 && !showForm && (
+        <p className="text-xs text-muted-foreground py-2">
+          No status checks logged yet. Log each time you check the portal to keep a record.
+        </p>
+      )}
+
+      <div className="space-y-0">
+        {entries.map((entry) => (
+          <div
+            key={entry.id}
+            className="flex justify-between items-center text-xs py-2.5 border-b border-border/40 last:border-0"
+          >
+            <div className="space-y-0.5">
+              <span className="font-medium">
+                {statusOptions.find((s) => s.value === entry.status)?.label}
+              </span>
+              <span className="text-muted-foreground block text-[10px]">
+                via {entry.method}
+              </span>
+            </div>
+            <span className="text-muted-foreground text-[10px]">
+              {format(entry.date, "MMM d, HH:mm")}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}

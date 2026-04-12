@@ -1,0 +1,67 @@
+{
+  "app": {
+    "name": "RenewMyTIE",
+    "tagline": "TIE Renewal, simplified.",
+    "subtitle": "The stress-free guide for highly qualified professionals in Spain",
+    "disclaimer": "This app provides informational guidance only, not legal advice. We are not practicing immigration law. Always verify information with official government sources."
+  },
+  "landing": {
+    "hero": "TIE Renewal, simplified.",
+    "sub": "The stress-free guide for highly qualified professionals in Spain",
+    "trust": "Built by an expat who's been through it",
+    "card1Title": "Track my TIE expiry",
+    "card1Desc": "Know exactly when to start your renewal and never miss a deadline",
+    "card2Title": "Guide me through renewal",
+    "card2Desc": "Step-by-step walkthrough with verified document checklist",
+    "card3Title": "I already applied",
+    "card3Desc": "Track your application status and count business days"
+  },
+  "status": {
+    "title": "Application Status Tracker",
+    "submitted": "Submitted",
+    "enTramite": "In Process",
+    "requerido": "Documents Requested",
+    "favorable": "Approved!",
+    "noFavorable": "Denied",
+    "silencio": "Auto-Approved (Silencio)",
+    "businessDays": "business days",
+    "remaining": "remaining",
+    "elapsed": "elapsed",
+    "pastThreshold": "Past the 20-day threshold",
+    "normalMessage": "Your application is being processed. This is normal.",
+    "approachingMessage": "Getting close to the 20-day threshold.",
+    "thresholdMessage": "Almost at the 20-day threshold! Check your status.",
+    "pastMessage": "Past the 20-day threshold. If no requerimiento was issued, your renewal should be approved via silencio administrativo positivo."
+  },
+  "expiry": {
+    "title": "TIE Expiry Tracker",
+    "tooEarly": "Too early to renew",
+    "windowOpen": "Renewal window is open!",
+    "urgent": "Renewal is urgent",
+    "expiredCanFile": "TIE expired — you can still file",
+    "expiredTooLate": "Filing deadline has passed"
+  },
+  "renew": {
+    "title": "Guided Renewal Walkthrough",
+    "step0": "Eligibility Check",
+    "step1": "Authentication Setup",
+    "step2": "Pay the Fee",
+    "step3": "Gather Documents",
+    "step4": "Submit Application",
+    "step5": "Done! Now What?"
+  },
+  "docs": {
+    "passport": "Full passport copy",
+    "feeReceipt": "Tasa 790 payment receipt",
+    "contract": "Employment contract",
+    "formulario": "Formulario MIT (MOV-INT)"
+  },
+  "common": {
+    "next": "Next",
+    "back": "Back",
+    "save": "Save",
+    "cancel": "Cancel",
+    "learnMore": "Learn more",
+    "getStarted": "Get started"
+  }
+}
