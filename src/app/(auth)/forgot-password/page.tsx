@@ -1,19 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
-import { AlertTriangle, LogIn } from "lucide-react";
+import { AlertTriangle, Mail, CheckCircle, ArrowLeft } from "lucide-react";
 
-export default function LoginPage() {
-  const router = useRouter();
+export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [sent, setSent] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -21,7 +19,12 @@ export default function LoginPage() {
     setLoading(true);
 
     const supabase = createClient();
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const siteUrl =
+      process.env.NEXT_PUBLIC_SITE_URL ??
+      (typeof window !== "undefined" ? window.location.origin : "");
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${siteUrl}/reset-password`,
+    });
 
     if (error) {
       setError(error.message);
@@ -29,20 +32,45 @@ export default function LoginPage() {
       return;
     }
 
-    router.push("/dashboard");
-    router.refresh();
+    setSent(true);
+    setLoading(false);
+  }
+
+  if (sent) {
+    return (
+      <div className="w-full max-w-sm space-y-6 text-center">
+        <div className="w-16 h-16 rounded-full bg-olive-light/30 flex items-center justify-center mx-auto">
+          <CheckCircle className="h-8 w-8 text-olive" />
+        </div>
+        <div className="space-y-2">
+          <h1 className="text-2xl font-bold tracking-tight">Check your email</h1>
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            If an account exists for <strong className="text-foreground">{email}</strong>,
+            we&apos;ve sent a password reset link. It expires in one hour.
+          </p>
+        </div>
+        <a href="/login" className="inline-flex">
+          <Button
+            variant="outline"
+            className="border-terracotta/30 text-terracotta hover:bg-terracotta/5"
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to sign in
+          </Button>
+        </a>
+      </div>
+    );
   }
 
   return (
     <div className="w-full max-w-sm space-y-6">
-      {/* Logo mark */}
       <div className="text-center space-y-2">
         <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-terracotta to-terracotta-dark flex items-center justify-center shadow-md mx-auto">
           <span className="text-white font-bold text-lg">T</span>
         </div>
-        <h1 className="text-2xl font-bold tracking-tight">Welcome back</h1>
+        <h1 className="text-2xl font-bold tracking-tight">Reset password</h1>
         <p className="text-sm text-muted-foreground">
-          Sign in to track your renewal
+          Enter your email and we&apos;ll send you a reset link
         </p>
       </div>
 
@@ -62,27 +90,6 @@ export default function LoginPage() {
             />
           </div>
 
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="password">Password</Label>
-              <a
-                href="/forgot-password"
-                className="text-xs text-muted-foreground hover:text-terracotta"
-              >
-                Forgot?
-              </a>
-            </div>
-            <Input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              autoComplete="current-password"
-              className="bg-background"
-            />
-          </div>
-
           {error && (
             <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 flex items-start gap-2 text-sm text-destructive">
               <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
@@ -96,40 +103,26 @@ export default function LoginPage() {
             className="w-full bg-terracotta hover:bg-terracotta-dark text-white h-11"
           >
             {loading ? (
-              "Signing in..."
+              "Sending link..."
             ) : (
               <>
-                <LogIn className="h-4 w-4 mr-2" />
-                Sign in
+                <Mail className="h-4 w-4 mr-2" />
+                Send reset link
               </>
             )}
           </Button>
         </form>
 
-        <div className="relative">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-border/60" />
-          </div>
-          <div className="relative flex justify-center text-xs">
-            <span className="bg-card px-2 text-muted-foreground">
-              Don&apos;t have an account?
-            </span>
-          </div>
-        </div>
-
-        <a href="/signup">
-          <Button
-            variant="outline"
-            className="w-full border-terracotta/30 text-terracotta hover:bg-terracotta/5"
+        <div className="text-center">
+          <a
+            href="/login"
+            className="text-sm text-muted-foreground hover:text-terracotta inline-flex items-center gap-1"
           >
-            Create account
-          </Button>
-        </a>
+            <ArrowLeft className="h-3.5 w-3.5" />
+            Back to sign in
+          </a>
+        </div>
       </div>
-
-      <p className="text-center text-xs text-muted-foreground/60">
-        Your data is private and only used to track your renewal.
-      </p>
     </div>
   );
 }
