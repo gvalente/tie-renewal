@@ -1,8 +1,32 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createClient as createAdminClient } from "@supabase/supabase-js";
 import { addBusinessDays } from "@/lib/business-days";
 import { SPANISH_HOLIDAYS } from "@/lib/holidays";
 import { THRESHOLDS } from "@/lib/constants";
+import { sendSilencioEmail, sendExpiryReminderEmail } from "@/lib/email";
+import { format } from "date-fns";
+
+// Admin client used to look up a user's email from auth.users — needed for email sends.
+function adminClient() {
+  return createAdminClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { persistSession: false } }
+  );
+}
+
+async function getUserEmail(userId: string): Promise<{ email: string | null; fullName: string | null }> {
+  try {
+    const admin = adminClient();
+    const { data, error } = await admin.auth.admin.getUserById(userId);
+    if (error || !data?.user) return { email: null, fullName: null };
+    const meta = (data.user.user_metadata ?? {}) as { full_name?: string };
+    return { email: data.user.email ?? null, fullName: meta.full_name ?? null };
+  } catch {
+    return { email: null, fullName: null };
+  }
+}
 
 // Vercel cron — runs daily at 08:00 UTC
 // vercel.json: { "crons": [{ "path": "/api/cron/reminders", "schedule": "0 8 * * *" }] }
@@ -55,14 +79,23 @@ export async function GET(request: Request) {
           })
           .eq("id", app.id);
 
-        // Log notification (email sending goes here when Resend is wired up)
+        // Log notification
         await supabase.from("notifications_log").insert({
           user_id: app.user_id,
           notification_type: "silencio_reached",
         });
 
-        // TODO: Send email via Resend
-        // await sendSilencioEmail(app.user_id, app.registro_number, thresholdDate);
+        const { email, fullName } = await getUserEmail(app.user_id);
+        if (email) {
+          const res = await sendSilencioEmail(email, {
+            fullName,
+            registroNumber: app.registro_number,
+            thresholdDate: format(thresholdDate, "MMMM d, yyyy"),
+          });
+          if (!res.ok) {
+            results.errors.push(`silencio email for ${app.id}: ${res.error}`);
+          }
+        }
 
         results.silencioNotifications++;
       }
@@ -104,8 +137,17 @@ export async function GET(request: Request) {
             notification_type: `tie_expiry_${threshold.days}_days`,
           });
 
-          // TODO: Send email via Resend
-          // await sendExpiryReminderEmail(record.user_id, expiryDate, threshold.days);
+          const { email, fullName } = await getUserEmail(record.user_id);
+          if (email) {
+            const res = await sendExpiryReminderEmail(email, {
+              fullName,
+              expiryDate: format(expiryDate, "MMMM d, yyyy"),
+              daysUntilExpiry: threshold.days,
+            });
+            if (!res.ok) {
+              results.errors.push(`expiry email for ${record.id}: ${res.error}`);
+            }
+          }
 
           results.expiryNotifications++;
         }
