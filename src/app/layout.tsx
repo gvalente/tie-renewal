@@ -53,6 +53,7 @@ export default async function RootLayout({
                 { href: "/track", label: "Expiry Tracker" },
                 { href: "/renew", label: "Renewal Guide" },
                 { href: "/status", label: "Status Tracker" },
+                { href: "/guide", label: "Knowledge Base" },
               ].map((link) => (
                 <a
                   key={link.href}
