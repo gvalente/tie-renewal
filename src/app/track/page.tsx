@@ -8,12 +8,15 @@ import { Badge } from "@/components/ui/badge";
 import { getExpiryDates, type ExpiryDates } from "@/lib/business-days";
 import { THRESHOLDS } from "@/lib/constants";
 import { format, differenceInDays } from "date-fns";
+import { createClient } from "@/lib/supabase/client";
+import { saveTIERecord } from "@/app/actions/applications";
 import {
   CalendarDays,
   AlertTriangle,
   CheckCircle,
   Clock,
   XCircle,
+  Save,
 } from "lucide-react";
 
 const phaseConfig: Record<
@@ -77,12 +80,36 @@ const phaseConfig: Record<
 export default function TrackPage() {
   const [expiryDate, setExpiryDate] = useState("");
   const [result, setResult] = useState<ExpiryDates | null>(null);
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "not_logged_in" | "error">("idle");
+  const [saveError, setSaveError] = useState<string | null>(null);
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!expiryDate) return;
     const dates = getExpiryDates(new Date(expiryDate + "T00:00:00"));
     setResult(dates);
+
+    // Best-effort save to DB if user is logged in
+    setSaveStatus("saving");
+    setSaveError(null);
+    try {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setSaveStatus("not_logged_in");
+        return;
+      }
+      const res = await saveTIERecord(expiryDate);
+      if (res.error) {
+        setSaveStatus("error");
+        setSaveError(res.error);
+      } else {
+        setSaveStatus("saved");
+      }
+    } catch (err) {
+      setSaveStatus("error");
+      setSaveError(err instanceof Error ? err.message : "Unknown error");
+    }
   }
 
   return (
@@ -138,8 +165,51 @@ export default function TrackPage() {
           </form>
         </div>
 
-        {result && <ExpiryResult dates={result} />}
+        {result && (
+          <>
+            <SaveIndicator status={saveStatus} error={saveError} />
+            <ExpiryResult dates={result} />
+          </>
+        )}
       </div>
+    </div>
+  );
+}
+
+function SaveIndicator({
+  status,
+  error,
+}: {
+  status: "idle" | "saving" | "saved" | "not_logged_in" | "error";
+  error: string | null;
+}) {
+  if (status === "idle" || status === "saving") return null;
+
+  if (status === "saved") {
+    return (
+      <div className="rounded-lg border border-olive-light/30 bg-olive-light/10 px-4 py-3 flex items-center gap-2 text-sm text-olive">
+        <CheckCircle className="h-4 w-4 shrink-0" />
+        <span>Saved to your dashboard.</span>
+      </div>
+    );
+  }
+
+  if (status === "not_logged_in") {
+    return (
+      <div className="rounded-lg border border-amber-warm/30 bg-amber-soft/30 px-4 py-3 flex items-center gap-2 text-sm text-amber-800">
+        <Save className="h-4 w-4 shrink-0" />
+        <span>
+          <a href="/login" className="underline underline-offset-2 font-medium">Sign in</a>{" "}
+          to save this TIE to your dashboard and get reminders.
+        </span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 flex items-center gap-2 text-sm text-destructive">
+      <AlertTriangle className="h-4 w-4 shrink-0" />
+      <span>Couldn&apos;t save: {error ?? "Unknown error"}</span>
     </div>
   );
 }

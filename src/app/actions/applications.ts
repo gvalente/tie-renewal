@@ -3,6 +3,74 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 
+export async function saveTIERecord(tieExpiryDate: string, permitType = "hqp_pac") {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated", id: null };
+
+  // Check if a TIE record with this expiry already exists for the user — update instead of duplicate
+  const { data: existing } = await supabase
+    .from("tie_records")
+    .select("id")
+    .eq("user_id", user.id)
+    .eq("tie_expiry_date", tieExpiryDate)
+    .maybeSingle();
+
+  if (existing) {
+    revalidatePath("/dashboard");
+    return { error: null, id: existing.id as string };
+  }
+
+  const { data, error } = await supabase
+    .from("tie_records")
+    .insert({
+      user_id: user.id,
+      tie_expiry_date: tieExpiryDate,
+      permit_type: permitType,
+    })
+    .select("id")
+    .single();
+
+  if (error) return { error: error.message, id: null };
+
+  revalidatePath("/dashboard");
+  return { error: null, id: data.id as string };
+}
+
+export async function deleteTIERecord(id: string) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated" };
+
+  const { error } = await supabase
+    .from("tie_records")
+    .delete()
+    .eq("id", id)
+    .eq("user_id", user.id);
+
+  if (error) return { error: error.message };
+
+  revalidatePath("/dashboard");
+  return { error: null };
+}
+
+export async function deleteApplication(id: string) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated" };
+
+  const { error } = await supabase
+    .from("renewal_applications")
+    .delete()
+    .eq("id", id)
+    .eq("user_id", user.id);
+
+  if (error) return { error: error.message };
+
+  revalidatePath("/dashboard");
+  return { error: null };
+}
+
 export async function saveApplication(registro: string, submissionDate: string) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
