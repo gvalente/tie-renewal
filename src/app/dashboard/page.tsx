@@ -14,6 +14,7 @@ import { format } from "date-fns";
 import { getTimelineStatus } from "@/lib/business-days";
 import { SPANISH_HOLIDAYS } from "@/lib/holidays";
 import { STATUS_LABELS, type StatusType } from "@/lib/constants";
+import { DeleteButton } from "@/components/DeleteButton";
 
 type Application = {
   id: string;
@@ -210,43 +211,47 @@ function ApplicationCard({
 }) {
   const submissionDate = new Date(app.submission_date + "T00:00:00");
   const status = getTimelineStatus(submissionDate, SPANISH_HOLIDAYS, today);
-  const trackerUrl = `/status/tracker?registro=${encodeURIComponent(app.registro_number ?? "")}&date=${app.submission_date}`;
+  const trackerUrl = app.registro_number
+    ? `/status/tracker?registro=${encodeURIComponent(app.registro_number)}&date=${app.submission_date}`
+    : null;
 
   return (
-    <a
-      href={app.registro_number ? trackerUrl : "#"}
-      className="group rounded-xl border border-border bg-card p-4 sm:p-5 hover:border-terracotta/30 hover:shadow-sm transition-all duration-200 flex items-center gap-4"
-    >
-      <div className="w-10 h-10 rounded-lg bg-terracotta/8 flex items-center justify-center shrink-0">
-        {status.isPastThreshold ? (
-          <CheckCircle className="h-5 w-5 text-olive" />
-        ) : (
-          <Clock className="h-5 w-5 text-terracotta" />
-        )}
-      </div>
-      <div className="flex-1 min-w-0 space-y-0.5">
-        <div className="flex items-center gap-2 flex-wrap">
-          {app.registro_number && (
-            <span className="font-mono text-xs bg-secondary px-2 py-0.5 rounded text-muted-foreground inline-flex items-center gap-1">
-              <Hash className="h-2.5 w-2.5" />
-              {app.registro_number}
-            </span>
+    <div className="group rounded-xl border border-border bg-card p-4 sm:p-5 hover:border-terracotta/30 hover:shadow-sm transition-all duration-200 flex items-center gap-4">
+      <a
+        href={trackerUrl ?? "#"}
+        className="flex items-center gap-4 flex-1 min-w-0"
+      >
+        <div className="w-10 h-10 rounded-lg bg-terracotta/8 flex items-center justify-center shrink-0">
+          {status.isPastThreshold ? (
+            <CheckCircle className="h-5 w-5 text-olive" />
+          ) : (
+            <Clock className="h-5 w-5 text-terracotta" />
           )}
-          <span className="text-xs text-muted-foreground">
-            {STATUS_LABELS[app.current_status as StatusType] ?? app.current_status}
-          </span>
         </div>
-        <p className="text-sm text-muted-foreground">
-          Submitted {format(submissionDate, "MMM d, yyyy")} &middot;{" "}
-          <span className={status.isPastThreshold ? "text-olive font-medium" : "text-terracotta font-medium"}>
-            {status.isPastThreshold
-              ? "Past 20-day threshold"
-              : `Day ${status.businessDaysElapsed} of 20`}
-          </span>
-        </p>
-      </div>
-      <ArrowRight className="h-4 w-4 text-muted-foreground/40 group-hover:text-terracotta transition-colors shrink-0" />
-    </a>
+        <div className="flex-1 min-w-0 space-y-0.5">
+          <div className="flex items-center gap-2 flex-wrap">
+            {app.registro_number && (
+              <span className="font-mono text-xs bg-secondary px-2 py-0.5 rounded text-muted-foreground inline-flex items-center gap-1">
+                <Hash className="h-2.5 w-2.5" />
+                {app.registro_number}
+              </span>
+            )}
+            <span className="text-xs text-muted-foreground">
+              {STATUS_LABELS[app.current_status as StatusType] ?? app.current_status}
+            </span>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Submitted {format(submissionDate, "MMM d, yyyy")} &middot;{" "}
+            <span className={status.isPastThreshold ? "text-olive font-medium" : "text-terracotta font-medium"}>
+              {status.isPastThreshold
+                ? "Past 20-day threshold"
+                : `Day ${status.businessDaysElapsed} of 20`}
+            </span>
+          </p>
+        </div>
+      </a>
+      <DeleteButton id={app.id} kind="application" />
+    </div>
   );
 }
 
@@ -265,27 +270,26 @@ function TIERecordCard({
   const isUrgent = daysUntil >= 0 && daysUntil <= 14;
 
   return (
-    <a
-      href="/track"
-      className="group rounded-xl border border-border bg-card p-4 sm:p-5 hover:border-amber-warm/40 hover:shadow-sm transition-all duration-200 flex items-center gap-4"
-    >
-      <div className="w-10 h-10 rounded-lg bg-amber-soft/50 flex items-center justify-center shrink-0">
-        <CalendarDays className="h-5 w-5 text-amber-700" />
-      </div>
-      <div className="flex-1 min-w-0 space-y-0.5">
-        <p className="text-sm font-medium">
-          TIE expires {format(expiryDate, "MMM d, yyyy")}
-        </p>
-        <p className={`text-sm ${isExpired ? "text-destructive" : isUrgent ? "text-terracotta font-medium" : "text-muted-foreground"}`}>
-          {isExpired
-            ? `Expired ${Math.abs(daysUntil)} days ago`
-            : isUrgent
-            ? `${daysUntil} days left — renew now!`
-            : `${daysUntil} days until expiry`}
-        </p>
-      </div>
-      <ArrowRight className="h-4 w-4 text-muted-foreground/40 group-hover:text-terracotta transition-colors shrink-0" />
-    </a>
+    <div className="group rounded-xl border border-border bg-card p-4 sm:p-5 hover:border-amber-warm/40 hover:shadow-sm transition-all duration-200 flex items-center gap-4">
+      <a href="/track" className="flex items-center gap-4 flex-1 min-w-0">
+        <div className="w-10 h-10 rounded-lg bg-amber-soft/50 flex items-center justify-center shrink-0">
+          <CalendarDays className="h-5 w-5 text-amber-700" />
+        </div>
+        <div className="flex-1 min-w-0 space-y-0.5">
+          <p className="text-sm font-medium">
+            TIE expires {format(expiryDate, "MMM d, yyyy")}
+          </p>
+          <p className={`text-sm ${isExpired ? "text-destructive" : isUrgent ? "text-terracotta font-medium" : "text-muted-foreground"}`}>
+            {isExpired
+              ? `Expired ${Math.abs(daysUntil)} days ago`
+              : isUrgent
+              ? `${daysUntil} days left — renew now!`
+              : `${daysUntil} days until expiry`}
+          </p>
+        </div>
+      </a>
+      <DeleteButton id={record.id} kind="tie" />
+    </div>
   );
 }
 
