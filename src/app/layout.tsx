@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { DM_Sans, JetBrains_Mono } from "next/font/google";
 import { createClient } from "@/lib/supabase/server";
+import { MobileNav } from "@/components/MobileNav";
 import "./globals.css";
 
 const dmSans = DM_Sans({
@@ -92,16 +93,7 @@ export default async function RootLayout({
               )}
             </nav>
             {/* Mobile nav */}
-            <nav className="sm:hidden flex items-center gap-3 text-sm">
-              <a href="/track" className="text-muted-foreground hover:text-foreground">Track</a>
-              <a href="/renew" className="text-muted-foreground hover:text-foreground">Renew</a>
-              <a href="/status" className="text-muted-foreground hover:text-foreground">Status</a>
-              {user ? (
-                <a href="/dashboard" className="text-terracotta font-medium">Dashboard</a>
-              ) : (
-                <a href="/login" className="text-terracotta font-medium">Sign in</a>
-              )}
-            </nav>
+            <MobileNav isAuthenticated={!!user} />
           </div>
         </header>
 
