@@ -52,11 +52,13 @@ export function StatusLog({ applicationId, initialChecks = [] }: Props) {
   const [selectedStatus, setSelectedStatus] = useState("");
   const [selectedMethod, setSelectedMethod] = useState("");
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   async function addEntry() {
     if (!selectedStatus || !selectedMethod) return;
 
     setSaving(true);
+    setSaveError(null);
     const newEntry: LogEntry = {
       id: Date.now().toString(),
       date: new Date(),
@@ -67,8 +69,8 @@ export function StatusLog({ applicationId, initialChecks = [] }: Props) {
     // Persist to DB if we have an applicationId
     if (applicationId) {
       const result = await saveStatusCheck(applicationId, selectedStatus, selectedMethod);
-      if (!result.error) {
-        // Use a real ID would come from the DB insert response, but we'll use the temp one
+      if (result.error) {
+        setSaveError("Couldn't save to your account — logged locally only.");
       }
     }
 
@@ -86,7 +88,7 @@ export function StatusLog({ applicationId, initialChecks = [] }: Props) {
           <span className="w-1 h-4 rounded-full bg-olive" />
           Status Check Log
           {applicationId && (
-            <span className="text-[10px] text-olive/70 font-normal">(saved)</span>
+            <span className="text-xs text-olive/70 font-normal">(saved)</span>
           )}
         </h3>
         <button
@@ -121,7 +123,7 @@ export function StatusLog({ applicationId, initialChecks = [] }: Props) {
                   }`}
                 >
                   <span className="font-medium block">{opt.label}</span>
-                  <span className="text-muted-foreground text-[10px]">{opt.sublabel}</span>
+                  <span className="text-muted-foreground text-xs">{opt.sublabel}</span>
                 </button>
               ))}
             </div>
@@ -155,6 +157,12 @@ export function StatusLog({ applicationId, initialChecks = [] }: Props) {
         </div>
       )}
 
+      {saveError && (
+        <p role="alert" className="text-xs text-destructive bg-destructive/10 px-3 py-2 rounded-lg mb-2">
+          {saveError}
+        </p>
+      )}
+
       {entries.length === 0 && !showForm && (
         <p className="text-xs text-muted-foreground py-2">
           No status checks logged yet. Log each time you check the portal to keep a record.
@@ -171,11 +179,11 @@ export function StatusLog({ applicationId, initialChecks = [] }: Props) {
               <span className="font-medium">
                 {statusOptions.find((s) => s.value === entry.status)?.label ?? entry.status}
               </span>
-              <span className="text-muted-foreground block text-[10px]">
+              <span className="text-muted-foreground block text-xs">
                 via {entry.method}
               </span>
             </div>
-            <span className="text-muted-foreground text-[10px]">
+            <span className="text-muted-foreground text-xs">
               {format(entry.date, "MMM d, HH:mm")}
             </span>
           </div>

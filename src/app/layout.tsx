@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { DM_Sans, JetBrains_Mono } from "next/font/google";
 import { createClient } from "@/lib/supabase/server";
 import { MobileNav } from "@/components/MobileNav";
+import { NavLink } from "@/components/NavLink";
+import { ExternalLink } from "lucide-react";
 import "./globals.css";
 
 const dmSans = DM_Sans({
@@ -35,6 +37,14 @@ export default async function RootLayout({
       className={`${dmSans.variable} ${jetbrainsMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-background text-foreground">
+        {/* Skip to main content */}
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100] focus:px-4 focus:py-2 focus:rounded-lg focus:bg-card focus:border focus:border-terracotta focus:text-sm focus:font-medium focus:text-foreground focus:shadow-md"
+        >
+          Skip to main content
+        </a>
+
         {/* Top accent stripe — azulejo-inspired */}
         <div className="h-1 bg-gradient-to-r from-terracotta via-amber-warm to-terracotta" />
 
@@ -56,22 +66,24 @@ export default async function RootLayout({
                 { href: "/status", label: "Status Tracker" },
                 { href: "/guide", label: "Knowledge Base" },
               ].map((link) => (
-                <a
+                <NavLink
                   key={link.href}
                   href={link.href}
-                  className="px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-all duration-200"
-                >
-                  {link.label}
-                </a>
+                  label={link.label}
+                  className="px-3 py-1.5 text-sm rounded-lg transition-all duration-200"
+                  activeClassName="text-foreground bg-accent font-medium"
+                  inactiveClassName="text-muted-foreground hover:text-foreground hover:bg-accent"
+                />
               ))}
               {user ? (
                 <div className="flex items-center gap-1 ml-2 pl-2 border-l border-border/60">
-                  <a
+                  <NavLink
                     href="/dashboard"
-                    className="px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-all duration-200"
-                  >
-                    Dashboard
-                  </a>
+                    label="Dashboard"
+                    className="px-3 py-1.5 text-sm rounded-lg transition-all duration-200"
+                    activeClassName="text-foreground bg-accent font-medium"
+                    inactiveClassName="text-muted-foreground hover:text-foreground hover:bg-accent"
+                  />
                   <form action="/api/auth/signout" method="POST">
                     <button
                       type="submit"
@@ -83,12 +95,13 @@ export default async function RootLayout({
                 </div>
               ) : (
                 <div className="flex items-center gap-1 ml-2 pl-2 border-l border-border/60">
-                  <a
+                  <NavLink
                     href="/login"
-                    className="px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-all duration-200"
-                  >
-                    Sign in
-                  </a>
+                    label="Sign in"
+                    className="px-3 py-1.5 text-sm rounded-lg transition-all duration-200"
+                    activeClassName="text-foreground bg-accent font-medium"
+                    inactiveClassName="text-muted-foreground hover:text-foreground hover:bg-accent"
+                  />
                 </div>
               )}
             </nav>
@@ -97,7 +110,7 @@ export default async function RootLayout({
           </div>
         </header>
 
-        <main className="flex-1">{children}</main>
+        <main id="main-content" className="flex-1">{children}</main>
 
         <footer className="mt-auto">
           {/* Warm divider */}
@@ -122,18 +135,23 @@ export default async function RootLayout({
                 {/* Links */}
                 <div className="flex gap-8 text-xs">
                   <div className="space-y-2">
-                    <p className="font-medium text-foreground/70 uppercase tracking-wider text-[10px]">Navigate</p>
+                    <p className="font-medium text-foreground/70 uppercase tracking-wider text-xs">Navigate</p>
                     <div className="space-y-1.5">
                       <a href="/track" className="block text-muted-foreground hover:text-terracotta transition-colors">Expiry Tracker</a>
                       <a href="/renew" className="block text-muted-foreground hover:text-terracotta transition-colors">Renewal Guide</a>
                       <a href="/status" className="block text-muted-foreground hover:text-terracotta transition-colors">Status Tracker</a>
+                      <a href="/guide" className="block text-muted-foreground hover:text-terracotta transition-colors">Knowledge Base</a>
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <p className="font-medium text-foreground/70 uppercase tracking-wider text-[10px]">Resources</p>
+                    <p className="font-medium text-foreground/70 uppercase tracking-wider text-xs">Resources</p>
                     <div className="space-y-1.5">
-                      <a href="https://expinterweb.inclusion.gob.es/iley11/inicio/showTramites.action?procedimientoSel=200&proc=1" target="_blank" rel="noopener noreferrer" className="block text-muted-foreground hover:text-terracotta transition-colors">Law 14/2013 Portal</a>
-                      <a href="https://sede.administracionespublicas.gob.es/infoext2/" target="_blank" rel="noopener noreferrer" className="block text-muted-foreground hover:text-terracotta transition-colors">infoext2</a>
+                      <a href="https://expinterweb.inclusion.gob.es/iley11/inicio/showTramites.action?procedimientoSel=200&proc=1" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-muted-foreground hover:text-terracotta transition-colors">
+                        Law 14/2013 Portal <ExternalLink className="h-3 w-3 opacity-50" />
+                      </a>
+                      <a href="https://sede.administracionespublicas.gob.es/infoext2/" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-muted-foreground hover:text-terracotta transition-colors">
+                        infoext2 <ExternalLink className="h-3 w-3 opacity-50" />
+                      </a>
                     </div>
                   </div>
                 </div>
@@ -141,7 +159,7 @@ export default async function RootLayout({
 
               {/* Disclaimer */}
               <div className="mt-6 pt-4 border-t border-border/50">
-                <p className="text-[11px] text-muted-foreground/70 leading-relaxed">
+                <p className="text-xs text-muted-foreground/70 leading-relaxed">
                   This app provides informational guidance only, not legal advice.
                   We are not practicing immigration law. Always verify information
                   with official government sources. Datos verificados con una solicitud real presentada en 2026.

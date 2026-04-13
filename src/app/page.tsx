@@ -94,7 +94,7 @@ export default function Home() {
                   <p className="text-sm text-muted-foreground leading-relaxed">
                     {entry.description}
                   </p>
-                  <div className="flex items-center gap-1 text-sm text-terracotta font-medium opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="flex items-center gap-1 text-sm text-terracotta font-medium opacity-40 group-hover:opacity-100 transition-opacity">
                     Get started <ArrowRight className="h-3.5 w-3.5" />
                   </div>
                 </div>

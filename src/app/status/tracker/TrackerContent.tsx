@@ -10,7 +10,7 @@ import { getTimelineStatus } from "@/lib/business-days";
 import { SPANISH_HOLIDAYS } from "@/lib/holidays";
 import { STATUSES } from "@/lib/constants";
 import { format } from "date-fns";
-import { ArrowLeft, Hash, Calendar } from "lucide-react";
+import { ArrowLeft, Hash, Calendar, ArrowRight } from "lucide-react";
 
 type SavedCheck = {
   id: string;
@@ -98,7 +98,17 @@ export function TrackerContent({ registro, dateStr, appId, savedChecks }: Props)
         </div>
 
         {/* Silencio guide if past threshold */}
-        {status.isPastThreshold && <SilencioGuide />}
+        {status.isPastThreshold && (
+          <>
+            <SilencioGuide />
+            <a
+              href="/guide/silencio"
+              className="inline-flex items-center gap-1.5 text-sm text-terracotta hover:text-terracotta-dark font-medium transition-colors"
+            >
+              Full silencio administrativo guide <ArrowRight className="h-3.5 w-3.5" />
+            </a>
+          </>
+        )}
 
         {/* Calendar + Quick Links / Status Log */}
         <div className="grid gap-6 md:grid-cols-2">

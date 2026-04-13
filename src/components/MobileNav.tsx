@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 import { Menu, X, LogIn, LayoutDashboard, LogOut } from "lucide-react";
 
 type Props = {
@@ -16,6 +17,10 @@ const links = [
 
 export function MobileNav({ isAuthenticated }: Props) {
   const [open, setOpen] = useState(false);
+  const pathname = usePathname();
+  const drawerRef = useRef<HTMLElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const firstFocusRef = useRef<HTMLButtonElement>(null);
 
   // Lock body scroll while drawer is open
   useEffect(() => {
@@ -27,11 +32,47 @@ export function MobileNav({ isAuthenticated }: Props) {
     };
   }, [open]);
 
-  // Close on Escape
+  // Move focus into drawer on open, return it on close
+  useEffect(() => {
+    if (open) {
+      firstFocusRef.current?.focus();
+    } else {
+      triggerRef.current?.focus();
+    }
+  }, [open]);
+
+  // Close on Escape + trap focus within drawer
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOpen(false);
+      if (e.key === "Escape") {
+        setOpen(false);
+        return;
+      }
+      if (e.key !== "Tab") return;
+
+      const drawer = drawerRef.current;
+      if (!drawer) return;
+      const focusable = Array.from(
+        drawer.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        )
+      );
+      if (focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+
+      if (e.shiftKey) {
+        if (document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        }
+      } else {
+        if (document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -40,10 +81,12 @@ export function MobileNav({ isAuthenticated }: Props) {
   return (
     <>
       <button
+        ref={triggerRef}
         type="button"
         onClick={() => setOpen(true)}
         aria-label="Open menu"
         aria-expanded={open}
+        aria-controls="mobile-nav-drawer"
         className="sm:hidden inline-flex items-center justify-center w-9 h-9 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
       >
         <Menu className="h-5 w-5" />
@@ -60,6 +103,8 @@ export function MobileNav({ isAuthenticated }: Props) {
 
       {/* Drawer */}
       <aside
+        ref={drawerRef}
+        id="mobile-nav-drawer"
         role="dialog"
         aria-modal="true"
         aria-label="Mobile navigation"
@@ -70,6 +115,7 @@ export function MobileNav({ isAuthenticated }: Props) {
         <div className="flex items-center justify-between px-5 py-4 border-b border-border/60">
           <span className="text-sm font-semibold">Menu</span>
           <button
+            ref={firstFocusRef}
             type="button"
             onClick={() => setOpen(false)}
             aria-label="Close menu"
@@ -81,18 +127,24 @@ export function MobileNav({ isAuthenticated }: Props) {
 
         <nav className="flex-1 overflow-y-auto px-3 py-4">
           <ul className="space-y-1">
-            {links.map((link) => (
-              <li key={link.href}>
-                <a
-                  href={link.href}
-                  onClick={() => setOpen(false)}
-                  className="block px-3 py-3 rounded-lg hover:bg-accent transition-colors"
-                >
-                  <p className="text-sm font-medium text-foreground">{link.label}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">{link.description}</p>
-                </a>
-              </li>
-            ))}
+            {links.map((link) => {
+              const isActive = pathname === link.href || pathname.startsWith(link.href);
+              return (
+                <li key={link.href}>
+                  <a
+                    href={link.href}
+                    onClick={() => setOpen(false)}
+                    aria-current={isActive ? "page" : undefined}
+                    className={`block px-3 py-3 rounded-lg transition-colors ${
+                      isActive ? "bg-accent" : "hover:bg-accent"
+                    }`}
+                  >
+                    <p className={`text-sm font-medium ${isActive ? "text-foreground" : "text-foreground"}`}>{link.label}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">{link.description}</p>
+                  </a>
+                </li>
+              );
+            })}
           </ul>
         </nav>
 

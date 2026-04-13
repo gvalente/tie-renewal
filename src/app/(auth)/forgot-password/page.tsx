@@ -86,12 +86,14 @@ export default function ForgotPasswordPage() {
               placeholder="you@example.com"
               required
               autoComplete="email"
+              aria-describedby={error ? "forgot-error" : undefined}
+              aria-invalid={!!error}
               className="bg-background"
             />
           </div>
 
           {error && (
-            <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 flex items-start gap-2 text-sm text-destructive">
+            <div id="forgot-error" role="alert" className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 flex items-start gap-2 text-sm text-destructive">
               <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
               {error}
             </div>

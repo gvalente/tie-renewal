@@ -106,6 +106,8 @@ export default function SignupPage() {
               placeholder="you@example.com"
               required
               autoComplete="email"
+              aria-describedby={error ? "signup-error" : undefined}
+              aria-invalid={!!error}
               className="bg-background"
             />
           </div>
@@ -125,12 +127,14 @@ export default function SignupPage() {
               required
               minLength={8}
               autoComplete="new-password"
+              aria-describedby={error ? "signup-error" : undefined}
+              aria-invalid={!!error}
               className="bg-background"
             />
           </div>
 
           {error && (
-            <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 flex items-start gap-2 text-sm text-destructive">
+            <div id="signup-error" role="alert" className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 flex items-start gap-2 text-sm text-destructive">
               <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
               {error}
             </div>
@@ -175,7 +179,7 @@ export default function SignupPage() {
 
       <p className="text-center text-xs text-muted-foreground/60">
         By creating an account you agree to our{" "}
-        <span className="underline underline-offset-2">privacy policy</span>.
+        <a href="/privacy" className="underline underline-offset-2 hover:text-muted-foreground">privacy policy</a>.
         We don&apos;t sell your data.
       </p>
     </div>

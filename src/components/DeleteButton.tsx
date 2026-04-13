@@ -61,7 +61,7 @@ export function DeleteButton({ id, kind, label = "Delete" }: Props) {
         {confirming ? "Click again to confirm" : label}
       </button>
       {error && (
-        <span className="text-[11px] text-destructive">{error}</span>
+        <span className="text-xs text-destructive">{error}</span>
       )}
     </div>
   );

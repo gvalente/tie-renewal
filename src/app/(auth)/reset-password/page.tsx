@@ -114,6 +114,8 @@ export default function ResetPasswordPage() {
                 required
                 minLength={8}
                 autoComplete="new-password"
+                aria-describedby={error ? "reset-error" : undefined}
+                aria-invalid={!!error}
                 className="bg-background"
               />
             </div>
@@ -128,12 +130,14 @@ export default function ResetPasswordPage() {
                 required
                 minLength={8}
                 autoComplete="new-password"
+                aria-describedby={error ? "reset-error" : undefined}
+                aria-invalid={!!error}
                 className="bg-background"
               />
             </div>
 
             {error && (
-              <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 flex items-start gap-2 text-sm text-destructive">
+              <div id="reset-error" role="alert" className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 flex items-start gap-2 text-sm text-destructive">
                 <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
                 {error}
               </div>

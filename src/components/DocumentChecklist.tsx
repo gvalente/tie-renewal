@@ -5,11 +5,30 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { REQUIRED_DOCUMENTS } from "@/lib/constants";
 import { FileText, PartyPopper } from "lucide-react";
 
+const STORAGE_KEY = "renewDocChecklist";
+
 export function DocumentChecklist() {
-  const [checked, setChecked] = useState<Record<string, boolean>>({});
+  const [checked, setChecked] = useState<Record<string, boolean>>(() => {
+    if (typeof window === "undefined") return {};
+    try {
+      return JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "{}");
+    } catch {
+      return {};
+    }
+  });
 
   const completedCount = Object.values(checked).filter(Boolean).length;
   const total = REQUIRED_DOCUMENTS.length;
+
+  function toggle(id: string, val: boolean) {
+    const next = { ...checked, [id]: val };
+    setChecked(next);
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+    } catch {
+      // localStorage unavailable (private browsing, etc.) — degrade silently
+    }
+  }
 
   return (
     <div className="space-y-4">
@@ -21,7 +40,14 @@ export function DocumentChecklist() {
       </div>
 
       {/* Progress */}
-      <div className="h-2 bg-sand-dark rounded-full overflow-hidden">
+      <div
+        role="progressbar"
+        aria-valuenow={completedCount}
+        aria-valuemin={0}
+        aria-valuemax={total}
+        aria-label="Documents ready"
+        className="h-2 bg-sand-dark rounded-full overflow-hidden"
+      >
         <div
           className="h-full bg-gradient-to-r from-terracotta to-terracotta-light rounded-full transition-all duration-500 ease-out"
           style={{ width: `${(completedCount / total) * 100}%` }}
@@ -40,9 +66,7 @@ export function DocumentChecklist() {
           >
             <Checkbox
               checked={checked[doc.id] || false}
-              onCheckedChange={(val) =>
-                setChecked({ ...checked, [doc.id]: !!val })
-              }
+              onCheckedChange={(val) => toggle(doc.id, !!val)}
               className="mt-0.5 data-[state=checked]:bg-olive data-[state=checked]:border-olive"
             />
             <div className="space-y-0.5 flex-1">

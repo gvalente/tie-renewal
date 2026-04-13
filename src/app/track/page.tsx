@@ -17,6 +17,7 @@ import {
   Clock,
   XCircle,
   Save,
+  Loader2,
 } from "lucide-react";
 
 const phaseConfig: Record<
@@ -183,7 +184,16 @@ function SaveIndicator({
   status: "idle" | "saving" | "saved" | "not_logged_in" | "error";
   error: string | null;
 }) {
-  if (status === "idle" || status === "saving") return null;
+  if (status === "idle") return null;
+
+  if (status === "saving") {
+    return (
+      <div className="rounded-lg border border-border/50 bg-card px-4 py-3 flex items-center gap-2 text-sm text-muted-foreground">
+        <Loader2 className="h-4 w-4 animate-spin shrink-0" />
+        <span>Saving to dashboard…</span>
+      </div>
+    );
+  }
 
   if (status === "saved") {
     return (

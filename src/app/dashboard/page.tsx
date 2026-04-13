@@ -60,7 +60,7 @@ export default async function DashboardPage() {
     <div className="flex flex-col">
       {/* Header */}
       <div className="warm-gradient texture-overlay border-b border-border/40">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 py-10 sm:py-14 space-y-2">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-10 sm:py-14 space-y-2">
           <h1 className="text-3xl sm:text-4xl font-bold tracking-tight">
             My Dashboard
           </h1>
@@ -70,7 +70,7 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 space-y-8 w-full">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 space-y-8 w-full">
         {/* Applications */}
         <section className="space-y-4">
           <div className="flex items-center justify-between">

@@ -96,9 +96,11 @@ export default function StatusPage() {
                 placeholder="REGAGE26e00022070621"
                 value={registro}
                 onChange={(e) => setRegistro(e.target.value)}
+                aria-describedby={error ? "status-error" : "registro-hint"}
+                aria-invalid={!!error && !registro.trim()}
                 className="font-mono bg-background"
               />
-              <p className="text-xs text-muted-foreground">
+              <p id="registro-hint" className="text-xs text-muted-foreground">
                 Found on your Acuse de Recibo. Format: REGAGE followed by numbers.
               </p>
             </div>
@@ -112,12 +114,14 @@ export default function StatusPage() {
                 type="date"
                 value={submissionDate}
                 onChange={(e) => setSubmissionDate(e.target.value)}
+                aria-describedby={error ? "status-error" : undefined}
+                aria-invalid={!!error && !submissionDate}
                 className="bg-background"
               />
             </div>
 
             {error && (
-              <p className="text-sm text-destructive bg-destructive/10 px-3 py-2 rounded-lg">{error}</p>
+              <p id="status-error" role="alert" className="text-sm text-destructive bg-destructive/10 px-3 py-2 rounded-lg">{error}</p>
             )}
 
             <Button

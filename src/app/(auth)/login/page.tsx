@@ -58,6 +58,8 @@ export default function LoginPage() {
               placeholder="you@example.com"
               required
               autoComplete="email"
+              aria-describedby={error ? "login-error" : undefined}
+              aria-invalid={!!error}
               className="bg-background"
             />
           </div>
@@ -79,12 +81,14 @@ export default function LoginPage() {
               onChange={(e) => setPassword(e.target.value)}
               required
               autoComplete="current-password"
+              aria-describedby={error ? "login-error" : undefined}
+              aria-invalid={!!error}
               className="bg-background"
             />
           </div>
 
           {error && (
-            <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 flex items-start gap-2 text-sm text-destructive">
+            <div id="login-error" role="alert" className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 flex items-start gap-2 text-sm text-destructive">
               <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
               {error}
             </div>

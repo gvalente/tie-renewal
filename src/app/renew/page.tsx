@@ -29,17 +29,31 @@ const steps = [
   { number: 5, title: "Done" },
 ];
 
-export default function RenewPage() {
-  const [currentStep, setCurrentStep] = useState(0);
+const STEP_KEY = "renewCurrentStep";
 
-  function next() {
-    setCurrentStep(Math.min(currentStep + 1, 5));
+export default function RenewPage() {
+  const [currentStep, setCurrentStep] = useState(() => {
+    if (typeof window === "undefined") return 0;
+    try {
+      const saved = parseInt(localStorage.getItem(STEP_KEY) ?? "0", 10);
+      return isNaN(saved) ? 0 : Math.min(Math.max(saved, 0), 5);
+    } catch {
+      return 0;
+    }
+  });
+
+  function goTo(step: number) {
+    setCurrentStep(step);
+    try {
+      localStorage.setItem(STEP_KEY, String(step));
+    } catch {
+      // silently ignore
+    }
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
-  function back() {
-    setCurrentStep(Math.max(currentStep - 1, 0));
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }
+
+  function next() { goTo(Math.min(currentStep + 1, 5)); }
+  function back() { goTo(Math.max(currentStep - 1, 0)); }
 
   return (
     <div className="flex flex-col">
@@ -60,7 +74,7 @@ export default function RenewPage() {
       </div>
 
       <div className="max-w-2xl mx-auto px-4 sm:px-6 py-8 space-y-6 w-full">
-        <StepProgress steps={steps} currentStep={currentStep} />
+        <StepProgress steps={steps} currentStep={currentStep} onStepClick={goTo} />
 
         <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
           {currentStep === 0 && <EligibilityStep />}
@@ -430,6 +444,12 @@ function DoneStep() {
             <li>&#8227; Check the portal periodically for status updates</li>
             <li>&#8227; Send an SMS with your NIE to {CONTACT.SMS} for a quick check</li>
             <li>&#8227; If you get a &quot;requerimiento&quot;, respond within 10 business days</li>
+            <li>
+              &#8227;{" "}
+              <a href="/guide/silencio" className="underline underline-offset-2 hover:text-olive">
+                Learn how silencio administrativo positivo works
+              </a>
+            </li>
           </ul>
         </div>
       </div>
