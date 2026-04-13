@@ -17,6 +17,7 @@ import { SPANISH_HOLIDAYS } from "@/lib/holidays";
 import { STATUS_LABELS, type StatusType } from "@/lib/constants";
 import { DeleteButton } from "@/components/DeleteButton";
 import { CalendarButtons } from "@/components/CalendarButtons";
+import { NotifyToggles } from "@/components/NotifyToggles";
 
 type Application = {
   id: string;
@@ -33,6 +34,11 @@ type TIERecord = {
   permit_type: string;
   renewal_window_start: string;
   late_deadline: string;
+  notify_90_days: boolean;
+  notify_60_days: boolean;
+  notify_30_days: boolean;
+  notify_14_days: boolean;
+  notify_7_days: boolean;
 };
 
 export default async function DashboardPage() {
@@ -54,7 +60,7 @@ export default async function DashboardPage() {
       .limit(5),
     supabase
       .from("tie_records")
-      .select("id, tie_expiry_date, permit_type, renewal_window_start, late_deadline")
+      .select("id, tie_expiry_date, permit_type, renewal_window_start, late_deadline, notify_90_days, notify_60_days, notify_30_days, notify_14_days, notify_7_days")
       .order("created_at", { ascending: false })
       .limit(3),
   ]);
@@ -149,7 +155,7 @@ export default async function DashboardPage() {
           ) : (
             <div className="space-y-3">
               {tieRecords.map((record: TIERecord) => (
-                <TIERecordCard key={record.id} record={record} today={today} />
+                <TIERecordCard key={record.id} record={record} today={today} isPro={isPro} />
               ))}
             </div>
           )}
@@ -272,9 +278,11 @@ function ApplicationCard({
 function TIERecordCard({
   record,
   today,
+  isPro,
 }: {
   record: TIERecord;
   today: Date;
+  isPro: boolean;
 }) {
   const expiryDate = new Date(record.tie_expiry_date + "T00:00:00");
   const daysUntil = Math.ceil(
@@ -333,6 +341,20 @@ function TIERecordCard({
         filename="tie-renewal-dates"
         layout="stack"
       />
+
+      {/* Email reminder preferences — Pro only */}
+      {isPro && (
+        <NotifyToggles
+          recordId={record.id}
+          initial={{
+            notify_90_days: record.notify_90_days ?? true,
+            notify_60_days: record.notify_60_days ?? true,
+            notify_30_days: record.notify_30_days ?? true,
+            notify_14_days: record.notify_14_days ?? true,
+            notify_7_days:  record.notify_7_days  ?? true,
+          }}
+        />
+      )}
     </div>
   );
 }

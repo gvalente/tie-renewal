@@ -104,6 +104,28 @@ export async function saveApplication(registro: string, submissionDate: string) 
   return { error: null, id: data.id as string };
 }
 
+export async function updateNotifyPreference(
+  recordId: string,
+  field: "notify_90_days" | "notify_60_days" | "notify_30_days" | "notify_14_days" | "notify_7_days",
+  value: boolean
+) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated" };
+
+  const tier = await getUserTier(supabase);
+  if (tier !== "pro") return { error: "Pro subscription required." };
+
+  const { error } = await supabase
+    .from("tie_records")
+    .update({ [field]: value })
+    .eq("id", recordId)
+    .eq("user_id", user.id);
+
+  if (error) return { error: error.message };
+  return { error: null };
+}
+
 export async function saveStatusCheck(
   applicationId: string,
   statusFound: string,
