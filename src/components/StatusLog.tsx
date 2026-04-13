@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
-import { Plus, X } from "lucide-react";
+import { Plus, X, Lock, Sparkles } from "lucide-react";
 import { saveStatusCheck } from "@/app/actions/applications";
 
 type LogEntry = {
@@ -37,9 +37,10 @@ type SavedCheck = {
 type Props = {
   applicationId?: string | null;
   initialChecks?: SavedCheck[];
+  isPro?: boolean;
 };
 
-export function StatusLog({ applicationId, initialChecks = [] }: Props) {
+export function StatusLog({ applicationId, initialChecks = [], isPro = false }: Props) {
   const [entries, setEntries] = useState<LogEntry[]>(
     initialChecks.map((c) => ({
       id: c.id,
@@ -79,6 +80,29 @@ export function StatusLog({ applicationId, initialChecks = [] }: Props) {
     setSelectedMethod("");
     setShowForm(false);
     setSaving(false);
+  }
+
+  // Pro gate: show upgrade CTA if not Pro and trying to save
+  if (!isPro && applicationId) {
+    return (
+      <div className="rounded-xl border border-terracotta/30 bg-card p-5 shadow-sm space-y-3">
+        <div className="flex items-center gap-2">
+          <Lock className="h-4 w-4 text-terracotta" />
+          <h3 className="text-sm font-semibold">Status Check Log</h3>
+          <span className="text-xs text-terracotta font-medium">Pro</span>
+        </div>
+        <p className="text-xs text-muted-foreground leading-relaxed">
+          Upgrade to Pro to save your status checks over time and get email alerts when your
+          application status changes.
+        </p>
+        <a href="/pricing">
+          <Button size="sm" className="bg-terracotta hover:bg-terracotta-dark text-white">
+            <Sparkles className="h-3.5 w-3.5 mr-1.5" />
+            Upgrade to Pro — $20
+          </Button>
+        </a>
+      </div>
+    );
   }
 
   return (

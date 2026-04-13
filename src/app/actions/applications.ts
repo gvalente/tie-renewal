@@ -1,12 +1,16 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { getUserTier } from "@/lib/subscription";
 import { revalidatePath } from "next/cache";
 
 export async function saveTIERecord(tieExpiryDate: string, permitType = "hqp_pac") {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "Not authenticated", id: null };
+
+  const tier = await getUserTier(supabase);
+  if (tier !== "pro") return { error: "Pro subscription required.", id: null };
 
   // Check if a TIE record with this expiry already exists for the user — update instead of duplicate
   const { data: existing } = await supabase
@@ -76,6 +80,9 @@ export async function saveApplication(registro: string, submissionDate: string) 
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "Not authenticated", id: null };
 
+  const tier = await getUserTier(supabase);
+  if (tier !== "pro") return { error: "Pro subscription required.", id: null };
+
   // Upsert by registro_number so re-entering the same number doesn't duplicate
   const { data, error } = await supabase
     .from("renewal_applications")
@@ -105,6 +112,9 @@ export async function saveStatusCheck(
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "Not authenticated" };
+
+  const tier = await getUserTier(supabase);
+  if (tier !== "pro") return { error: "Pro subscription required." };
 
   // Verify the application belongs to this user
   const { data: app } = await supabase

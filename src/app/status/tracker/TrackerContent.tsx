@@ -11,6 +11,7 @@ import { SPANISH_HOLIDAYS } from "@/lib/holidays";
 import { STATUSES } from "@/lib/constants";
 import { format } from "date-fns";
 import { ArrowLeft, Hash, Calendar, ArrowRight } from "lucide-react";
+import { CalendarButtons } from "@/components/CalendarButtons";
 
 type SavedCheck = {
   id: string;
@@ -24,9 +25,10 @@ type Props = {
   dateStr: string;
   appId: string | null;
   savedChecks: SavedCheck[];
+  isPro?: boolean;
 };
 
-export function TrackerContent({ registro, dateStr, appId, savedChecks }: Props) {
+export function TrackerContent({ registro, dateStr, appId, savedChecks, isPro = false }: Props) {
   if (!registro || !dateStr) {
     return (
       <div className="text-center py-16 space-y-3">
@@ -110,6 +112,23 @@ export function TrackerContent({ registro, dateStr, appId, savedChecks }: Props)
           </>
         )}
 
+        {/* Silencio threshold calendar export */}
+        {status.thresholdDate && (
+          <div className="rounded-xl border border-border bg-card px-5 py-4 shadow-sm">
+            <CalendarButtons
+              events={[
+                {
+                  title: "Silencio Administrativo Threshold",
+                  date: status.thresholdDate.toISOString().slice(0, 10),
+                  description: `20-business-day silencio threshold for registro ${registro}. If no decision by this date, you may claim silencio administrativo positivo under Law 14/2013.`,
+                },
+              ]}
+              filename={`silencio-threshold-${registro}`}
+              layout="row"
+            />
+          </div>
+        )}
+
         {/* Calendar + Quick Links / Status Log */}
         <div className="grid gap-6 md:grid-cols-2">
           <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
@@ -127,7 +146,7 @@ export function TrackerContent({ registro, dateStr, appId, savedChecks }: Props)
 
           <div className="space-y-6">
             <QuickLinks />
-            <StatusLog applicationId={appId} initialChecks={savedChecks} />
+            <StatusLog applicationId={appId} initialChecks={savedChecks} isPro={isPro} />
           </div>
         </div>
       </div>

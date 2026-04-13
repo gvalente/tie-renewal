@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { getUserTier } from "@/lib/subscription";
 import { redirect } from "next/navigation";
 import {
   CalendarDays,
@@ -15,6 +16,7 @@ import { getTimelineStatus } from "@/lib/business-days";
 import { SPANISH_HOLIDAYS } from "@/lib/holidays";
 import { STATUS_LABELS, type StatusType } from "@/lib/constants";
 import { DeleteButton } from "@/components/DeleteButton";
+import { CalendarButtons } from "@/components/CalendarButtons";
 
 type Application = {
   id: string;
@@ -41,6 +43,9 @@ export default async function DashboardPage() {
 
   if (!user) redirect("/login");
 
+  const tier = await getUserTier(supabase);
+  const isPro = tier === "pro";
+
   const [{ data: applications }, { data: tieRecords }] = await Promise.all([
     supabase
       .from("renewal_applications")
@@ -61,11 +66,20 @@ export default async function DashboardPage() {
       {/* Header */}
       <div className="warm-gradient texture-overlay border-b border-border/40">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 py-10 sm:py-14 space-y-2">
-          <h1 className="text-3xl sm:text-4xl font-bold tracking-tight">
-            My Dashboard
-          </h1>
+          <div className="flex items-center gap-3">
+            <h1 className="text-3xl sm:text-4xl font-bold tracking-tight">
+              My Dashboard
+            </h1>
+            {isPro && (
+              <span className="px-2.5 py-1 text-xs font-semibold rounded-full bg-terracotta/10 text-terracotta border border-terracotta/20 self-center">
+                Pro
+              </span>
+            )}
+          </div>
           <p className="text-muted-foreground">
-            All your renewal activity in one place
+            {isPro
+              ? "Full access — all your renewal activity in one place"
+              : "All your renewal activity in one place"}
           </p>
         </div>
       </div>
@@ -269,26 +283,56 @@ function TIERecordCard({
   const isExpired = daysUntil < 0;
   const isUrgent = daysUntil >= 0 && daysUntil <= 14;
 
+  const calendarEvents = [
+    {
+      title: "TIE Renewal Window Opens",
+      date: record.renewal_window_start,
+      description:
+        "Your TIE renewal window opens today. You can now submit your renewal application at the Oficina de Extranjería.",
+    },
+    {
+      title: "TIE Expiry Date",
+      date: record.tie_expiry_date,
+      description:
+        "Your TIE card expires today. If you haven't renewed yet, file as soon as possible to avoid penalties.",
+    },
+    {
+      title: "TIE Late Filing Deadline",
+      date: record.late_deadline,
+      description:
+        "Last day to file a late renewal application (90 days after expiry). After this date you may face fines under Law 14/2013.",
+    },
+  ];
+
   return (
-    <div className="group rounded-xl border border-border bg-card p-4 sm:p-5 hover:border-amber-warm/40 hover:shadow-sm transition-all duration-200 flex items-center gap-4">
-      <a href="/track" className="flex items-center gap-4 flex-1 min-w-0">
-        <div className="w-10 h-10 rounded-lg bg-amber-soft/50 flex items-center justify-center shrink-0">
-          <CalendarDays className="h-5 w-5 text-amber-700" />
-        </div>
-        <div className="flex-1 min-w-0 space-y-0.5">
-          <p className="text-sm font-medium">
-            TIE expires {format(expiryDate, "MMM d, yyyy")}
-          </p>
-          <p className={`text-sm ${isExpired ? "text-destructive" : isUrgent ? "text-terracotta font-medium" : "text-muted-foreground"}`}>
-            {isExpired
-              ? `Expired ${Math.abs(daysUntil)} days ago`
-              : isUrgent
-              ? `${daysUntil} days left — renew now!`
-              : `${daysUntil} days until expiry`}
-          </p>
-        </div>
-      </a>
-      <DeleteButton id={record.id} kind="tie" />
+    <div className="group rounded-xl border border-border bg-card p-4 sm:p-5 hover:border-amber-warm/40 hover:shadow-sm transition-all duration-200 space-y-3">
+      <div className="flex items-center gap-4">
+        <a href="/track" className="flex items-center gap-4 flex-1 min-w-0">
+          <div className="w-10 h-10 rounded-lg bg-amber-soft/50 flex items-center justify-center shrink-0">
+            <CalendarDays className="h-5 w-5 text-amber-700" />
+          </div>
+          <div className="flex-1 min-w-0 space-y-0.5">
+            <p className="text-sm font-medium">
+              TIE expires {format(expiryDate, "MMM d, yyyy")}
+            </p>
+            <p className={`text-sm ${isExpired ? "text-destructive" : isUrgent ? "text-terracotta font-medium" : "text-muted-foreground"}`}>
+              {isExpired
+                ? `Expired ${Math.abs(daysUntil)} days ago`
+                : isUrgent
+                ? `${daysUntil} days left — renew now!`
+                : `${daysUntil} days until expiry`}
+            </p>
+          </div>
+        </a>
+        <DeleteButton id={record.id} kind="tie" />
+      </div>
+
+      {/* Calendar export */}
+      <CalendarButtons
+        events={calendarEvents}
+        filename="tie-renewal-dates"
+        layout="stack"
+      />
     </div>
   );
 }

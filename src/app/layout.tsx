@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { DM_Sans, JetBrains_Mono } from "next/font/google";
 import { createClient } from "@/lib/supabase/server";
+import { getUserTier } from "@/lib/subscription";
 import { MobileNav } from "@/components/MobileNav";
 import { NavLink } from "@/components/NavLink";
 import { ExternalLink } from "lucide-react";
@@ -30,6 +31,8 @@ export default async function RootLayout({
 }>) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
+  const tier = user ? await getUserTier(supabase) : "free";
+  const isPro = tier === "pro";
 
   return (
     <html
@@ -65,6 +68,7 @@ export default async function RootLayout({
                 { href: "/renew", label: "Renewal Guide" },
                 { href: "/status", label: "Status Tracker" },
                 { href: "/guide", label: "Knowledge Base" },
+                { href: "/pricing", label: "Pricing" },
               ].map((link) => (
                 <NavLink
                   key={link.href}
@@ -84,6 +88,11 @@ export default async function RootLayout({
                     activeClassName="text-foreground bg-accent font-medium"
                     inactiveClassName="text-muted-foreground hover:text-foreground hover:bg-accent"
                   />
+                  {isPro && (
+                    <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-terracotta/10 text-terracotta border border-terracotta/20">
+                      Pro
+                    </span>
+                  )}
                   <form action="/api/auth/signout" method="POST">
                     <button
                       type="submit"
@@ -106,7 +115,7 @@ export default async function RootLayout({
               )}
             </nav>
             {/* Mobile nav */}
-            <MobileNav isAuthenticated={!!user} />
+            <MobileNav isAuthenticated={!!user} isPro={isPro} />
           </div>
         </header>
 
@@ -141,6 +150,7 @@ export default async function RootLayout({
                       <a href="/renew" className="block text-muted-foreground hover:text-terracotta transition-colors">Renewal Guide</a>
                       <a href="/status" className="block text-muted-foreground hover:text-terracotta transition-colors">Status Tracker</a>
                       <a href="/guide" className="block text-muted-foreground hover:text-terracotta transition-colors">Knowledge Base</a>
+                      <a href="/pricing" className="block text-muted-foreground hover:text-terracotta transition-colors">Pricing</a>
                     </div>
                   </div>
                   <div className="space-y-2">

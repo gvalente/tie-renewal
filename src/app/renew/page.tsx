@@ -18,6 +18,8 @@ import {
   PartyPopper,
   ClipboardList,
   Info,
+  Lock,
+  Sparkles,
 } from "lucide-react";
 
 const steps = [
@@ -42,6 +44,10 @@ export default function RenewPage() {
     }
   });
 
+  // Optimistic pro state — checked on mount via cookie set by server at login
+  // For the gate we redirect client-side to /pricing; server actions enforce server-side too.
+  const [showProGate, setShowProGate] = useState(false);
+
   function goTo(step: number) {
     setCurrentStep(step);
     try {
@@ -52,8 +58,20 @@ export default function RenewPage() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
-  function next() { goTo(Math.min(currentStep + 1, 5)); }
-  function back() { goTo(Math.max(currentStep - 1, 0)); }
+  function next() {
+    const nextStep = Math.min(currentStep + 1, 5);
+    // Step 3→4 transition: show inline Pro gate instead of advancing
+    if (nextStep === 4) {
+      setShowProGate(true);
+      return;
+    }
+    goTo(nextStep);
+  }
+
+  function back() {
+    setShowProGate(false);
+    goTo(Math.max(currentStep - 1, 0));
+  }
 
   return (
     <div className="flex flex-col">
@@ -76,31 +94,99 @@ export default function RenewPage() {
       <div className="max-w-2xl mx-auto px-4 sm:px-6 py-8 space-y-6 w-full">
         <StepProgress steps={steps} currentStep={currentStep} onStepClick={goTo} />
 
-        <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
-          {currentStep === 0 && <EligibilityStep />}
-          {currentStep === 1 && <AuthStep />}
-          {currentStep === 2 && <PaymentStep />}
-          {currentStep === 3 && <DocumentsStep />}
-          {currentStep === 4 && <SubmitStep />}
-          {currentStep === 5 && <DoneStep />}
+        {showProGate ? (
+          <ProGate onCancel={() => setShowProGate(false)} />
+        ) : (
+          <>
+            <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
+              {currentStep === 0 && <EligibilityStep />}
+              {currentStep === 1 && <AuthStep />}
+              {currentStep === 2 && <PaymentStep />}
+              {currentStep === 3 && <DocumentsStep />}
+              {currentStep === 4 && <SubmitStep />}
+              {currentStep === 5 && <DoneStep />}
+            </div>
+
+            {/* Navigation */}
+            <div className="flex justify-between">
+              {currentStep > 0 && currentStep < 5 ? (
+                <Button variant="outline" onClick={back} className="border-border">
+                  <ArrowLeft className="h-4 w-4 mr-2" /> Back
+                </Button>
+              ) : (
+                <div />
+              )}
+              {currentStep < 5 && (
+                <Button onClick={next} className="bg-terracotta hover:bg-terracotta-dark text-white">
+                  {currentStep === 0 ? "I'm eligible" : "Next step"}
+                  <ArrowRight className="h-4 w-4 ml-2" />
+                </Button>
+              )}
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ProGate({ onCancel }: { onCancel: () => void }) {
+  return (
+    <div className="rounded-xl border-2 border-terracotta bg-card shadow-sm overflow-hidden">
+      <div className="px-5 sm:px-6 py-4 border-b border-terracotta/20 bg-terracotta/5">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-lg bg-white/60 flex items-center justify-center">
+            <Lock className="h-4 w-4 text-terracotta" />
+          </div>
+          <div>
+            <h2 className="font-semibold">Steps 4 &amp; 5 are Pro</h2>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              The submission walkthrough and post-submission tracking require Pro access.
+            </p>
+          </div>
+        </div>
+      </div>
+      <div className="p-5 sm:p-6 space-y-5">
+        <p className="text-sm text-muted-foreground leading-relaxed">
+          You&apos;ve done all the prep work — documents gathered, fee paid, software ready.
+          Upgrade to Pro to get the full submission walkthrough, your application saved to the dashboard,
+          and email alerts when silencio administrativo is reached.
+        </p>
+
+        <ul className="space-y-2.5">
+          {[
+            "Step 4: Full submission form walkthrough",
+            "Step 5: Done — what happens next",
+            "Application saved to your dashboard",
+            "Silencio administrativo email alert",
+            "TIE expiry reminder emails",
+          ].map((item) => (
+            <li key={item} className="flex items-center gap-2.5 text-sm">
+              <CheckCircle className="h-4 w-4 text-terracotta shrink-0" />
+              <span>{item}</span>
+            </li>
+          ))}
+        </ul>
+
+        <div className="flex flex-col sm:flex-row gap-3">
+          <a href="/pricing" className="flex-1">
+            <Button className="w-full bg-terracotta hover:bg-terracotta-dark text-white h-11">
+              <Sparkles className="h-4 w-4 mr-2" />
+              Upgrade to Pro — $20
+            </Button>
+          </a>
+          <Button
+            variant="outline"
+            onClick={onCancel}
+            className="sm:w-auto border-border"
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" /> Back to Step 3
+          </Button>
         </div>
 
-        {/* Navigation */}
-        <div className="flex justify-between">
-          {currentStep > 0 && currentStep < 5 ? (
-            <Button variant="outline" onClick={back} className="border-border">
-              <ArrowLeft className="h-4 w-4 mr-2" /> Back
-            </Button>
-          ) : (
-            <div />
-          )}
-          {currentStep < 5 && (
-            <Button onClick={next} className="bg-terracotta hover:bg-terracotta-dark text-white">
-              {currentStep === 0 ? "I'm eligible" : "Next step"}
-              <ArrowRight className="h-4 w-4 ml-2" />
-            </Button>
-          )}
-        </div>
+        <p className="text-xs text-muted-foreground text-center">
+          One-time payment &middot; Lifetime access &middot; No subscription
+        </p>
       </div>
     </div>
   );

@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
 import { createClient as createAdminClient } from "@supabase/supabase-js";
 import { addBusinessDays } from "@/lib/business-days";
 import { SPANISH_HOLIDAYS } from "@/lib/holidays";
@@ -38,7 +37,9 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const supabase = await createClient();
+  // Cron runs with no user session — use service role client so RLS doesn't
+  // block reads across all users' data.
+  const supabase = adminClient();
   const today = new Date();
   const todayStr = today.toISOString().slice(0, 10);
 
@@ -48,13 +49,32 @@ export async function GET(request: Request) {
     errors: [] as string[],
   };
 
+  // Load all notifications already sent today — used to deduplicate expiry emails
+  // if Vercel retries the cron or it fires more than once in a day.
+  const { data: todaySent } = await supabase
+    .from("notifications_log")
+    .select("user_id, notification_type")
+    .gte("sent_at", `${todayStr}T00:00:00Z`);
+
+  const alreadySentToday = new Set(
+    (todaySent ?? []).map((n) => `${n.user_id}:${n.notification_type}`)
+  );
+
   // ── 1. Silencio administrativo threshold notifications ─────────────────────
-  // Find applications that hit their 20-business-day threshold today
+  // Find applications that hit their 20-business-day threshold today (Pro users only)
+  const { data: proUserIds } = await supabase
+    .from("profiles")
+    .select("id")
+    .eq("subscription_tier", "pro");
+
+  const proIds = (proUserIds ?? []).map((p) => p.id);
+
   const { data: applications, error: appsError } = await supabase
     .from("renewal_applications")
     .select("id, user_id, submission_date, registro_number")
     .eq("silencio_reached", false)
-    .eq("current_status", "en_tramite");
+    .eq("current_status", "en_tramite")
+    .in("user_id", proIds.length > 0 ? proIds : ["__no_match__"]);
 
   if (appsError) {
     results.errors.push(`Failed to fetch applications: ${appsError.message}`);
@@ -103,12 +123,13 @@ export async function GET(request: Request) {
   }
 
   // ── 2. TIE expiry reminder notifications ───────────────────────────────────
-  // Find TIE records expiring in 90, 60, 30, 14, or 7 days
+  // Find TIE records expiring in 90, 60, 30, 14, or 7 days (Pro users only)
   const { data: tieRecords, error: tieError } = await supabase
     .from("tie_records")
     .select(
       "id, user_id, tie_expiry_date, notify_90_days, notify_60_days, notify_30_days, notify_14_days, notify_7_days"
-    );
+    )
+    .in("user_id", proIds.length > 0 ? proIds : ["__no_match__"]);
 
   if (tieError) {
     results.errors.push(`Failed to fetch TIE records: ${tieError.message}`);
@@ -128,13 +149,16 @@ export async function GET(request: Request) {
       );
 
       for (const threshold of notifyThresholds) {
+        const notificationType = `tie_expiry_${threshold.days}_days`;
+        const dedupKey = `${record.user_id}:${notificationType}`;
         if (
           daysUntilExpiry === threshold.days &&
-          record[threshold.field]
+          record[threshold.field] !== false &&
+          !alreadySentToday.has(dedupKey)
         ) {
           await supabase.from("notifications_log").insert({
             user_id: record.user_id,
-            notification_type: `tie_expiry_${threshold.days}_days`,
+            notification_type: notificationType,
           });
 
           const { email, fullName } = await getUserEmail(record.user_id);

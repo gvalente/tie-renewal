@@ -2,10 +2,11 @@
 
 import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
-import { Menu, X, LogIn, LayoutDashboard, LogOut } from "lucide-react";
+import { Menu, X, LogIn, LayoutDashboard, LogOut, Sparkles } from "lucide-react";
 
 type Props = {
   isAuthenticated: boolean;
+  isPro?: boolean;
 };
 
 const links = [
@@ -13,9 +14,10 @@ const links = [
   { href: "/renew", label: "Renewal Guide", description: "Step-by-step walkthrough" },
   { href: "/status", label: "Status Tracker", description: "20-day countdown" },
   { href: "/guide", label: "Knowledge Base", description: "Explainers & deep dives" },
+  { href: "/pricing", label: "Pricing", description: "Free vs Pro — $20 one-time" },
 ];
 
-export function MobileNav({ isAuthenticated }: Props) {
+export function MobileNav({ isAuthenticated, isPro = false }: Props) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
   const drawerRef = useRef<HTMLElement>(null);
@@ -158,6 +160,11 @@ export function MobileNav({ isAuthenticated }: Props) {
               >
                 <LayoutDashboard className="h-4 w-4 text-terracotta" />
                 <span className="text-sm font-medium">Dashboard</span>
+                {isPro && (
+                  <span className="ml-auto inline-flex items-center gap-0.5 px-1.5 py-0.5 text-xs font-semibold rounded-full bg-terracotta/10 text-terracotta border border-terracotta/20">
+                    <Sparkles className="h-2.5 w-2.5" /> Pro
+                  </span>
+                )}
               </a>
               <form action="/api/auth/signout" method="POST">
                 <button
