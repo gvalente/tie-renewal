@@ -3,7 +3,7 @@ import { createClient as createAdminClient } from "@supabase/supabase-js";
 import { addBusinessDays } from "@/lib/business-days";
 import { SPANISH_HOLIDAYS } from "@/lib/holidays";
 import { THRESHOLDS } from "@/lib/constants";
-import { sendSilencioEmail, sendExpiryReminderEmail } from "@/lib/email";
+import { sendSilencioEmail, sendExpiryReminderEmail, sendRequeridoEmail } from "@/lib/email";
 import { format } from "date-fns";
 
 // Admin client used to look up a user's email from auth.users — needed for email sends.
@@ -46,6 +46,7 @@ export async function GET(request: Request) {
   const results = {
     silencioNotifications: 0,
     expiryNotifications: 0,
+    requeridoNotifications: 0,
     errors: [] as string[],
   };
 
@@ -176,6 +177,51 @@ export async function GET(request: Request) {
           results.expiryNotifications++;
         }
       }
+    }
+  }
+
+  // ── 3. Requerimiento notifications ────────────────────────────────────────
+  // Send once per application (permanent dedup via notification_type per appId).
+  // Fires when current_status = 'requerido' and we haven't emailed yet.
+  const { data: requeridoSent } = await supabase
+    .from("notifications_log")
+    .select("notification_type")
+    .like("notification_type", "requerido_notified_%");
+
+  const alreadyNotifiedRequerido = new Set(
+    (requeridoSent ?? []).map((n: { notification_type: string }) => n.notification_type)
+  );
+
+  const { data: requeridoApps, error: requeridoError } = await supabase
+    .from("renewal_applications")
+    .select("id, user_id, registro_number")
+    .eq("current_status", "requerido")
+    .in("user_id", proIds.length > 0 ? proIds : ["__no_match__"]);
+
+  if (requeridoError) {
+    results.errors.push(`Failed to fetch requerido applications: ${requeridoError.message}`);
+  } else if (requeridoApps) {
+    for (const app of requeridoApps) {
+      const notificationType = `requerido_notified_${app.id}`;
+      if (alreadyNotifiedRequerido.has(notificationType)) continue;
+
+      await supabase.from("notifications_log").insert({
+        user_id: app.user_id,
+        notification_type: notificationType,
+      });
+
+      const { email, fullName } = await getUserEmail(app.user_id);
+      if (email) {
+        const res = await sendRequeridoEmail(email, {
+          fullName,
+          registroNumber: app.registro_number,
+        });
+        if (!res.ok) {
+          results.errors.push(`requerido email for ${app.id}: ${res.error}`);
+        }
+      }
+
+      results.requeridoNotifications++;
     }
   }
 

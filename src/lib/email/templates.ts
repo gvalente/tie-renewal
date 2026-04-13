@@ -147,6 +147,62 @@ Start your renewal: ${BRAND.siteUrl}/renew
   return { subject, html, text };
 }
 
+// ────────────────────────────────────────────────────────────────────────────
+// Requerimiento — UGE has requested additional documents
+// ────────────────────────────────────────────────────────────────────────────
+
+export type RequeridoTemplateArgs = {
+  fullName?: string | null;
+  registroNumber?: string | null;
+};
+
+export function requeridoTemplate(args: RequeridoTemplateArgs) {
+  const name = args.fullName ? args.fullName.split(" ")[0] : "there";
+  const registro = args.registroNumber ?? "(no registro number on file)";
+  const subject = `Action required: UGE has requested documents for your TIE renewal`;
+  const portalUrl = "https://expinterweb.inclusion.gob.es/iley11/";
+
+  const html = wrap(`
+    <h1 style="margin:0 0 12px;font-size:20px;">Hi ${escapeHtml(name)},</h1>
+    <p>UGE-CE has issued a <strong>requerimiento de documentación</strong> for your TIE renewal application — they are requesting additional documents.</p>
+    <div style="background:#FFF8F1;border:1px solid #F1E2CF;border-radius:8px;padding:14px 16px;margin:16px 0;">
+      <p style="margin:0 0 6px;font-size:13px;color:#7A6D64;">Application reference</p>
+      <p style="margin:0;font-family:ui-monospace,Menlo,monospace;font-size:13px;">${escapeHtml(registro)}</p>
+    </div>
+    <p><strong>You must respond within 10 business days</strong> of the notification date. Missing this deadline may result in your application being denied.</p>
+    <p><strong>What to do right now:</strong></p>
+    <ol style="padding-left:20px;">
+      <li>Log in to the Law 14/2013 portal with your digital certificate.</li>
+      <li>Go to <em>Mis Trámites → Notificaciones</em> to see exactly what documents are needed.</li>
+      <li>Gather and upload the requested documents through the portal.</li>
+      <li>Note: the 20-day silencio countdown is <strong>paused</strong> while the requerimiento is open.</li>
+    </ol>
+    <p style="margin-top:24px;">
+      <a href="${portalUrl}" style="display:inline-block;background:${BRAND.primary};color:#fff;text-decoration:none;padding:10px 18px;border-radius:8px;font-weight:600;">Open Law 14/2013 portal</a>
+    </p>
+  `);
+
+  const text = `Hi ${name},
+
+UGE-CE has issued a requerimiento de documentación for your TIE renewal application — they are requesting additional documents.
+
+Application: ${registro}
+
+You must respond within 10 business days of the notification date. Missing this deadline may result in your application being denied.
+
+What to do right now:
+1. Log in to the Law 14/2013 portal with your digital certificate.
+2. Go to Mis Trámites → Notificaciones to see what documents are needed.
+3. Gather and upload the requested documents through the portal.
+4. Note: the 20-day silencio countdown is paused while the requerimiento is open.
+
+Open portal: ${portalUrl}
+Dashboard: ${BRAND.siteUrl}/dashboard
+`;
+
+  return { subject, html, text };
+}
+
 function escapeHtml(s: string): string {
   return s
     .replace(/&/g, "&amp;")
